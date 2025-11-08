@@ -199,7 +199,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extraire les informations de l'article depuis le XML\nconst xml = $input.item.json.data;\n\n// Fonction pour extraire du texte depuis le XML\nfunction extractText(xml, startTag, endTag) {\n  const start = xml.indexOf(startTag);\n  if (start === -1) return '';\n  const end = xml.indexOf(endTag, start);\n  if (end === -1) return '';\n  return xml.substring(start + startTag.length, end).trim();\n}\n\n// Fonction pour extraire tous les éléments d'un tag\nfunction extractAll(xml, tag) {\n  const regex = new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, 'g');\n  const matches = [];\n  let match;\n  while ((match = regex.exec(xml)) !== null) {\n    matches.push(match[1]);\n  }\n  return matches;\n}\n\n// Extraction du PMID\nconst pmid = extractText(xml, '<PMID Version=\"1\">', '</PMID>');\n\n// Extraction du titre\nconst title = extractText(xml, '<ArticleTitle>', '</ArticleTitle>');\n\n// Extraction de l'abstract\nlet abstract = '';\nconst abstractTexts = extractAll(xml, 'AbstractText');\nif (abstractTexts.length > 0) {\n  abstract = abstractTexts.join('\\n\\n');\n}\n\n// Extraction des auteurs\nconst lastNames = extractAll(xml, 'LastName');\nconst forenames = extractAll(xml, 'ForeName');\nconst authors = [];\nfor (let i = 0; i < Math.min(lastNames.length, forenames.length); i++) {\n  authors.push(`${forenames[i]} ${lastNames[i]}`);\n}\nconst authorsString = authors.length > 0 ? authors.join(', ') : 'Auteurs non disponibles';\n\n// Extraction du journal\nconst journal = extractText(xml, '<Title>', '</Title>');\n\n// Extraction de l'année de publication\nconst year = extractText(xml, '<Year>', '</Year>');\n\n// Extraction du DOI\nconst doi = extractText(xml, '<ELocationID EIdType=\"doi\" ValidYN=\"Y\">', '</ELocationID>');\n\n// Construction de l'URL PubMed\nconst pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;\n\n// Construire le lien DOI si disponible\nconst doiUrl = doi ? `https://doi.org/${doi}` : '';\n\nconsole.log('📄 Article parsé:');\nconsole.log('PMID:', pmid);\nconsole.log('Titre:', title);\nconsole.log('Journal:', journal);\nconsole.log('Année:', year);\nconsole.log('Auteurs:', authorsString);\nconsole.log('DOI:', doi);\n\nreturn {\n  json: {\n    pmid: pmid,\n    title: title,\n    abstract: abstract,\n    authors: authorsString,\n    journal: journal,\n    year: year,\n    doi: doi,\n    pubmed_url: pubmedUrl,\n    doi_url: doiUrl\n  }\n};"
+        "jsCode": "// Extraire les informations de l'article depuis le XML\nconst xml = $input.item.json.data;\n\nfunction extractText(xmlContent, startTag, endTag) {\n  const start = xmlContent.indexOf(startTag);\n  if (start === -1) return '';\n  const end = xmlContent.indexOf(endTag, start);\n  if (end === -1) return '';\n  return xmlContent.substring(start + startTag.length, end).trim();\n}\n\nfunction extractAll(xmlContent, tag) {\n  const regex = new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, 'g');\n  const matches = [];\n  let match;\n  while ((match = regex.exec(xmlContent)) !== null) {\n    matches.push(match[1]);\n  }\n  return matches;\n}\n\nfunction resolveMonth(monthValue) {\n  if (!monthValue) return '';\n  const normalized = monthValue.toString().trim().toLowerCase();\n  const monthMap = {\n    jan: 1,\n    january: 1,\n    feb: 2,\n    february: 2,\n    mar: 3,\n    march: 3,\n    apr: 4,\n    april: 4,\n    may: 5,\n    mai: 5,\n    jun: 6,\n    june: 6,\n    jul: 7,\n    july: 7,\n    aug: 8,\n    august: 8,\n    sep: 9,\n    sept: 9,\n    september: 9,\n    oct: 10,\n    october: 10,\n    nov: 11,\n    november: 11,\n    dec: 12,\n    december: 12\n  };\n\n  if (/^\\d+$/.test(normalized)) {\n    const numeric = parseInt(normalized, 10);\n    if (numeric >= 1 && numeric <= 12) {\n      return numeric;\n    }\n  }\n\n  return monthMap[normalized] || '';\n}\n\nfunction formatPublicationDate(xmlContent) {\n  const pubDateMatch = xmlContent.match(/<PubDate>([\\s\\S]*?)<\\/PubDate>/);\n  const articleDateMatch = xmlContent.match(/<ArticleDate[^>]*>([\\s\\S]*?)<\\/ArticleDate>/);\n\n  const source = pubDateMatch ? pubDateMatch[1] : articleDateMatch ? articleDateMatch[1] : '';\n  const year = extractText(source, '<Year>', '</Year>');\n  const monthRaw = extractText(source, '<Month>', '</Month>');\n  const dayRaw = extractText(source, '<Day>', '</Day>');\n  const medlineDate = extractText(source, '<MedlineDate>', '</MedlineDate>');\n\n  const monthNumber = resolveMonth(monthRaw);\n  const dayNumber = dayRaw && /^\\d+$/.test(dayRaw.trim()) ? parseInt(dayRaw.trim(), 10) : '';\n\n  const hasYear = year && /^\\d{4}$/.test(year.trim());\n  const hasMonth = Boolean(monthNumber);\n  const hasDay = Boolean(dayNumber);\n\n  let isoDate = '';\n  let displayDate = '';\n\n  if (hasYear && hasMonth && hasDay) {\n    const date = new Date(Date.UTC(parseInt(year, 10), monthNumber - 1, dayNumber));\n    isoDate = date.toISOString().split('T')[0];\n    displayDate = date.toLocaleDateString('fr-FR', {\n      day: '2-digit',\n      month: 'long',\n      year: 'numeric',\n    });\n  } else if (hasYear && hasMonth) {\n    const date = new Date(Date.UTC(parseInt(year, 10), monthNumber - 1, 1));\n    isoDate = date.toISOString().split('T')[0];\n    displayDate = date.toLocaleDateString('fr-FR', {\n      month: 'long',\n      year: 'numeric',\n    });\n  } else if (medlineDate) {\n    displayDate = medlineDate;\n    const yearMatch = medlineDate.match(/(19|20)\\d{2}/);\n    if (yearMatch) {\n      isoDate = `${yearMatch[0]}-01-01`;\n    }\n  } else if (hasYear) {\n    displayDate = year.trim();\n    isoDate = `${year.trim()}-01-01`;\n  } else {\n    displayDate = 'Date non disponible';\n  }\n\n  return {\n    isoDate,\n    displayDate,\n    year: hasYear ? year.trim() : '',\n  };\n}\n\nconst pmid = extractText(xml, '<PMID Version=\"1\">', '</PMID>');\nconst title = extractText(xml, '<ArticleTitle>', '</ArticleTitle>');\n\nlet abstract = '';\nconst abstractTexts = extractAll(xml, 'AbstractText');\nif (abstractTexts.length > 0) {\n  abstract = abstractTexts.join('\\n\\n');\n}\n\nconst lastNames = extractAll(xml, 'LastName');\nconst forenames = extractAll(xml, 'ForeName');\nconst authors = [];\nfor (let i = 0; i < Math.min(lastNames.length, forenames.length); i++) {\n  authors.push(`${forenames[i]} ${lastNames[i]}`);\n}\nconst authorsString = authors.length > 0 ? authors.join(', ') : 'Auteurs non disponibles';\n\nconst journal = extractText(xml, '<Title>', '</Title>');\nconst publicationDate = formatPublicationDate(xml);\nconst doi = extractText(xml, '<ELocationID EIdType=\"doi\" ValidYN=\"Y\">', '</ELocationID>');\n\nconst pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;\nconst doiUrl = doi ? `https://doi.org/${doi}` : '';\n\nconsole.log('📄 Article parsé:');\nconsole.log('PMID:', pmid);\nconsole.log('Titre:', title);\nconsole.log('Journal:', journal);\nconsole.log('Date de publication:', publicationDate.displayDate);\nconsole.log('Auteurs:', authorsString);\nconsole.log('DOI:', doi);\n\nreturn {\n  json: {\n    pmid,\n    title,\n    abstract,\n    authors: authorsString,\n    journal,\n    publication_date_display: publicationDate.displayDate,\n    publication_date_iso: publicationDate.isoDate,\n    year: publicationDate.year,\n    doi,\n    pubmed_url: pubmedUrl,\n    doi_url: doiUrl,\n  },\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -212,7 +212,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Récupérer les données de l'article parsé\nconst article = $input.item.json;\n\n// Construction du contenu HTML de l'email\nconst emailHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 800px;\n            margin: 0 auto;\n            padding: 20px;\n            background-color: #f5f5f5;\n        }\n        .container {\n            background-color: white;\n            padding: 40px;\n            border-radius: 10px;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n        }\n        .header {\n            text-align: center;\n            padding-bottom: 30px;\n            border-bottom: 3px solid #2563eb;\n            margin-bottom: 30px;\n        }\n        .header h1 {\n            color: #2563eb;\n            font-size: 28px;\n            margin: 0;\n            font-weight: 600;\n        }\n        .greeting {\n            font-size: 18px;\n            color: #555;\n            margin-bottom: 20px;\n        }\n        .section {\n            margin-bottom: 30px;\n        }\n        .section-title {\n            color: #2563eb;\n            font-size: 20px;\n            font-weight: 600;\n            margin-bottom: 15px;\n            padding-bottom: 10px;\n            border-bottom: 2px solid #e5e7eb;\n        }\n        .article-title {\n            font-size: 22px;\n            font-weight: bold;\n            color: #1e40af;\n            margin-bottom: 15px;\n            line-height: 1.4;\n        }\n        .metadata {\n            background-color: #f8fafc;\n            padding: 15px;\n            border-radius: 8px;\n            margin-bottom: 20px;\n            font-size: 14px;\n        }\n        .metadata-item {\n            margin: 8px 0;\n        }\n        .metadata-label {\n            font-weight: 600;\n            color: #475569;\n        }\n        .abstract-content {\n            background-color: #fefce8;\n            padding: 20px;\n            border-radius: 8px;\n            border-left: 4px solid #eab308;\n            font-size: 15px;\n            line-height: 1.8;\n            color: #374151;\n            white-space: pre-wrap;\n        }\n        .button {\n            display: inline-block;\n            background-color: #2563eb;\n            color: white;\n            padding: 12px 30px;\n            text-decoration: none;\n            border-radius: 6px;\n            font-weight: 600;\n            margin: 10px 10px 10px 0;\n            transition: background-color 0.3s;\n        }\n        .button:hover {\n            background-color: #1e40af;\n        }\n        .button.secondary {\n            background-color: #10b981;\n        }\n        .button.secondary:hover {\n            background-color: #059669;\n        }\n        .footer {\n            margin-top: 40px;\n            padding-top: 20px;\n            border-top: 2px solid #e5e7eb;\n            text-align: center;\n            color: #6b7280;\n            font-size: 14px;\n        }\n        .highlight {\n            background-color: #fef3c7;\n            padding: 2px 6px;\n            border-radius: 3px;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>📚 Votre Article Scientifique du Jour</h1>\n        </div>\n        \n        <div class=\"greeting\">\n            Bonjour <span class=\"highlight\">{{PRENOM}}</span>,\n        </div>\n        \n        <p>Voici votre sélection quotidienne d'article scientifique sur la performance sportive :</p>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">📖 Titre de l'article</div>\n            <div class=\"article-title\">${article.title}</div>\n        </div>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">ℹ️ Informations</div>\n            <div class=\"metadata\">\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">✍️ Auteurs:</span> ${article.authors}\n                </div>\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">📰 Journal:</span> ${article.journal}\n                </div>\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">📅 Année:</span> ${article.year}\n               \n                </div>\n            </div>\n        </div>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">📝 Résumé (Abstract)</div>\n            <div class=\"abstract-content\">${article.abstract || 'Résumé non disponible pour cet article.'}</div>\n        </div>\n        \n        <div class=\"section\" style=\"text-align: center; margin-top: 30px;\">\n            <a href=\"${article.pubmed_url}\" class=\"button\">📄 Lire l'article complet sur PubMed</a>\n            ${article.doi_url ? `<a href=\"${article.doi_url}\" class=\"button secondary\">🔗 Accéder via DOI</a>` : ''}\n        </div>\n        \n        <div class=\"footer\">\n            <p>📧 Newsletter scientifique • Performance & Entraînement</p>\n            <p style=\"margin-top: 10px;\"></p>\n        </div>\n    </div>\n</body>\n</html>\n`;\n// Création du sujet de l'email avec le titre de l'article\nconst emailSubject = `📚 Article du jour : ${article.title.substring(0, 60)}${article.title.length > 60 ? '...' : ''}`;\n\nconsole.log('✉️ Email formaté avec succès');\nconsole.log('Sujet:', emailSubject);\n\n\nreturn {\n  json: {\n    ...article,\n    email_html: emailHtml,\n    email_subject: emailSubject\n  }\n};"
+        "jsCode": "// Récupérer les données de l'article parsé\nconst article = $input.item.json;\n\nconst formatValue = (value, fallback = 'Information non disponible') => {\n  if (value === undefined || value === null) {\n    return fallback;\n  }\n  const text = String(value).trim();\n  return text === '' ? fallback : text;\n};\n\nconst translateText = async (text, targetLang) => {\n  const sanitized = text.trim();\n  if (!sanitized) {\n    return '';\n  }\n\n  try {\n    const response = await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'https://libretranslate.de/translate',\n      body: {\n        q: sanitized,\n        source: 'auto',\n        target: targetLang,\n        format: 'text',\n      },\n      json: true,\n      timeout: 8000,\n    });\n\n    if (response && response.translatedText) {\n      return response.translatedText.trim();\n    }\n  } catch (error) {\n    console.log(`⚠️ Échec de la traduction (${targetLang}) :`, error.message || error);\n  }\n\n  return sanitized;\n};\n\nconst originalTitle = formatValue(article.title, 'Titre non disponible');\nconst originalAbstract = formatValue(article.abstract, 'Résumé non disponible pour cet article.');\n\nconst [titleFr, abstractFr] = await Promise.all([\n  translateText(originalTitle, 'fr'),\n  translateText(originalAbstract, 'fr'),\n]);\n\nconst titleEn = originalTitle;\nconst abstractEn = originalAbstract;\n\nconst publicationDate = formatValue(article.publication_date_display, 'Date non disponible');\n\nconst emailHtml = `\n<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <style>\n    :root { color-scheme: only light; }\n    body {\n      margin: 0;\n      padding: 36px 0;\n      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;\n      background: linear-gradient(180deg, #f3f4f6 0%, #e5f0ff 100%);\n      color: #0f172a;\n    }\n    .wrapper {\n      max-width: 760px;\n      margin: 0 auto;\n      background: #ffffff;\n      border-radius: 20px;\n      overflow: hidden;\n      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);\n      border: 1px solid rgba(14, 116, 144, 0.12);\n    }\n    .header {\n      background: #0f172a;\n      color: #f8fafc;\n      padding: 40px 44px;\n      border-bottom: 4px solid #38bdf8;\n    }\n    .header-title {\n      margin: 0;\n      font-size: 24px;\n      font-weight: 600;\n      letter-spacing: 0.5px;\n    }\n    .header-subtitle {\n      margin: 12px 0 0;\n      font-size: 15px;\n      color: rgba(248, 250, 252, 0.8);\n    }\n    .content {\n      padding: 44px;\n      background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0) 55%);\n    }\n    .greeting {\n      font-size: 18px;\n      margin: 0 0 18px;\n    }\n    .intro {\n      margin: 0 0 28px;\n      font-size: 15px;\n      line-height: 1.7;\n      color: #334155;\n    }\n    .meta-pill {\n      display: inline-flex;\n      align-items: center;\n      gap: 8px;\n      background: rgba(56, 189, 248, 0.14);\n      color: #0f172a;\n      border: 1px solid rgba(56, 189, 248, 0.35);\n      padding: 10px 16px;\n      border-radius: 999px;\n      font-size: 13px;\n      font-weight: 600;\n      margin-bottom: 24px;\n    }\n    .card {\n      background: #ffffff;\n      border-radius: 18px;\n      border: 1px solid rgba(15, 23, 42, 0.08);\n      padding: 32px;\n      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);\n    }\n    .title-fr {\n      margin: 0 0 10px;\n      font-size: 23px;\n      line-height: 1.4;\n      color: #0f172a;\n    }\n    .title-en {\n      margin: 0;\n      font-size: 15px;\n      color: #2563eb;\n      font-weight: 500;\n    }\n    .summary-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));\n      gap: 24px;\n      margin: 32px 0;\n    }\n    .summary-column {\n      background: rgba(15, 23, 42, 0.04);\n      border-radius: 16px;\n      padding: 22px 24px;\n      border: 1px solid rgba(15, 23, 42, 0.08);\n    }\n    .summary-column h3 {\n      margin: 0 0 12px;\n      font-size: 15px;\n      text-transform: uppercase;\n      letter-spacing: 1px;\n      color: #0f172a;\n    }\n    .summary-text {\n      font-size: 15px;\n      line-height: 1.7;\n      color: #1f2937;\n      white-space: pre-line;\n    }\n    .meta-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));\n      gap: 18px;\n      margin-top: 16px;\n    }\n    .meta-item {\n      padding: 16px;\n      border-radius: 14px;\n      background: rgba(15, 23, 42, 0.04);\n      border: 1px solid rgba(148, 163, 184, 0.35);\n    }\n    .meta-label {\n      display: block;\n      font-size: 12px;\n      letter-spacing: 0.6px;\n      text-transform: uppercase;\n      color: #475569;\n      margin-bottom: 6px;\n    }\n    .meta-value {\n      font-size: 15px;\n      font-weight: 600;\n      color: #0f172a;\n      line-height: 1.5;\n    }\n    .cta {\n      margin: 38px 0 10px;\n      text-align: center;\n    }\n    .button {\n      display: inline-block;\n      padding: 14px 28px;\n      border-radius: 999px;\n      text-decoration: none;\n      font-weight: 600;\n      font-size: 15px;\n      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);\n      color: #ffffff;\n      box-shadow: 0 16px 35px rgba(37, 99, 235, 0.3);\n      transition: transform 0.2s ease, box-shadow 0.2s ease;\n    }\n    .button:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 20px 45px rgba(37, 99, 235, 0.35);\n    }\n    .footer {\n      padding: 28px 44px;\n      font-size: 12px;\n      color: #475569;\n      text-align: center;\n      background: #f8fafc;\n      border-top: 1px solid rgba(15, 23, 42, 0.08);\n    }\n    @media (max-width: 640px) {\n      body { padding: 20px 0; }\n      .content { padding: 32px 24px; }\n      .header { padding: 32px 24px; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n    <div class=\"header\">\n      <h1 class=\"header-title\">Veille scientifique – Performance & Entraînement</h1>\n      <div class=\"header-subtitle\">Synthèse quotidienne des nouvelles publications PubMed</div>\n    </div>\n    <div class=\"content\">\n      <p class=\"greeting\">Bonjour <strong>{{PRENOM}}</strong>,</p>\n      <p class=\"intro\">Voici la publication mise en avant aujourd'hui. Nous traduisons automatiquement les informations essentielles pour faciliter votre lecture et votre partage.</p>\n      <div class=\"meta-pill\">📅 Paru le ${publicationDate}</div>\n      <div class=\"card\">\n        <h2 class=\"title-fr\">${formatValue(titleFr, 'Titre indisponible')}</h2>\n        <p class=\"title-en\">Titre (EN) : ${formatValue(titleEn, 'Title unavailable')}</p>\n        <div class=\"summary-grid\">\n          <div class=\"summary-column\">\n            <h3>Résumé (FR)</h3>\n            <div class=\"summary-text\">${formatValue(abstractFr, 'Résumé non disponible')}</div>\n          </div>\n          <div class=\"summary-column\">\n            <h3>Summary (EN)</h3>\n            <div class=\"summary-text\">${formatValue(abstractEn, 'Summary unavailable')}</div>\n          </div>\n        </div>\n        <div class=\"meta-grid\">\n          <div class=\"meta-item\">\n            <span class=\"meta-label\">Auteurs</span>\n            <span class=\"meta-value\">${formatValue(article.authors)}</span>\n          </div>\n          <div class=\"meta-item\">\n            <span class=\"meta-label\">Journal</span>\n            <span class=\"meta-value\">${formatValue(article.journal)}</span>\n          </div>\n          <div class=\"meta-item\">\n            <span class=\"meta-label\">Identifiant PubMed</span>\n            <span class=\"meta-value\">${formatValue(article.pmid)}</span>\n          </div>\n        </div>\n      </div>\n      <div class=\"cta\">\n        <a class=\"button\" href=\"${article.pubmed_url}\" target=\"_blank\" rel=\"noopener\">Ouvrir l'article sur PubMed</a>\n      </div>\n      <p class=\"intro\" style=\"margin-top: 30px;\">Besoin de suivre un thème particulier ou d'approfondir un sujet ? Répondez directement à ce message, nous ajusterons la veille en conséquence.</p>\n    </div>\n    <div class=\"footer\">\n      Diffusé automatiquement par Auto-PubMed • ${new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}\n    </div>\n  </div>\n</body>\n</html>\n`;\n\nconst emailSubject = `Veille Performance – ${formatValue(titleFr || titleEn, 'Article PubMed')}`;\n\nconsole.log('✉️ Email formaté avec succès');\nconsole.log('Sujet:', emailSubject);\n\nreturn {\n  json: {\n    ...article,\n    title_fr: titleFr,\n    title_en: titleEn,\n    abstract_fr: abstractFr,\n    abstract_en: abstractEn,\n    email_html: emailHtml,\n    email_subject: emailSubject,\n  },\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -225,7 +225,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ne garder qu'un seul item pour éviter les doublons dans Google Sheets\nconst item = $input.first();\n\nreturn [\n  {\n    json: {\n      PMID: item.json.pmid,\n      Titre: item.json.title,\n      Auteurs: item.json.authors,\n      Journal: item.json.journal,\n      Date_envoi: new Date().toISOString().split('T')[0]\n    }\n  }\n];"
+        "jsCode": "// Préparer l'enregistrement dans Google Sheets à partir du premier item reçu\nconst item = $input.first();\n\nif (!item || !item.json) {\n  throw new Error('Aucune donnée article disponible pour l\\'enregistrement.');\n}\n\nconst normalize = (value) => {\n  if (value === null || value === undefined) {\n    return '';\n  }\n  const text = String(value).trim();\n  return text === 'undefined' ? '' : text;\n};\n\nconst now = new Date();\nconst dateEnvoi = now.toISOString().split('T')[0];\n\nreturn [\n  {\n    json: {\n      PMID: normalize(item.json.pmid),\n      Titre: normalize(item.json.title_fr || item.json.title),\n      Titre_original: normalize(item.json.title_en || item.json.title),\n      Journal: normalize(item.json.journal),\n      Auteurs: normalize(item.json.authors),\n      Date_publication: normalize(item.json.publication_date_display),\n      Date_envoi: dateEnvoi,\n      Lien_PubMed: normalize(item.json.pubmed_url),\n      Lien_DOI: normalize(item.json.doi_url),\n    },\n  },\n];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -269,13 +269,83 @@
               "removed": false
             },
             {
-              "id": "DATE",
-              "displayName": "DATE",
+              "id": "Titre",
+              "displayName": "Titre",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true,
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Journal",
+              "displayName": "Journal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Auteurs",
+              "displayName": "Auteurs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Date_envoi",
+              "displayName": "Date_envoi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Lien_PubMed",
+              "displayName": "Lien_PubMed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Lien_DOI",
+              "displayName": "Lien_DOI",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Titre_original",
+              "displayName": "Titre_original",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "Date_publication",
+              "displayName": "Date_publication",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
               "removed": false
             }
           ],
@@ -376,7 +446,7 @@
           "string": [
             {
               "name": "pubmed_term",
-          "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR \"Exercice\"[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR \"Self‑efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR \"Réhabilitation\"[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+              "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR \"Exercice\"[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR \"Self‑efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR \"Réhabilitation\"[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
             }
           ]
         }
@@ -431,6 +501,11 @@
         [
           {
             "node": "Formater email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Dédupliquer pour Sheets",
             "type": "main",
             "index": 0
           }
@@ -505,13 +580,7 @@
     },
     "Send a message": {
       "main": [
-        [
-          {
-            "node": "Dédupliquer pour Sheets",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Schedule Trigger": {
