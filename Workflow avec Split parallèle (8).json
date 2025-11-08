@@ -1,0 +1,529 @@
+{
+  "name": "Workflow avec Split parallèle",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8",
+          "mode": "list",
+          "cachedResultName": "Stockage article ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Articles envoyés",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -128,
+        208
+      ],
+      "id": "92c13613-2303-4a32-af75-9b75a85c7acc",
+      "name": "Lire articles déjà envoyés",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Of3aojWoAn4AcnS4",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "db",
+              "value": "pubmed"
+            },
+            {
+              "name": "term",
+              "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+            },
+            {
+              "name": "datetype",
+              "value": "pdat"
+            },
+            {
+              "name": "mindate",
+              "value": "={{ $now.minus({ days: 1 }).toFormat('yyyy/MM/dd') }}"
+            },
+            {
+              "name": "maxdate",
+              "value": "={{ $now.minus({ days: 1 }).toFormat('yyyy/MM/dd') }}"
+            },
+            {
+              "name": "retmode",
+              "value": "json"
+            },
+            {
+              "name": "retmax",
+              "value": "20"
+            },
+            {
+              "name": "api_key",
+              "value": "9ffae49b7e30d12efeb1babc13a1cd166909"
+            },
+            {
+              "name": "sort",
+              "value": "relevance"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        32
+      ],
+      "id": "1b4dd88e-4450-42de-9a3a-8e488097ff20",
+      "name": "Recherche articles HIER"
+    },
+    {
+      "parameters": {
+        "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "db",
+              "value": "pubmed"
+            },
+            {
+              "name": "term",
+              "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+            },
+            {
+              "name": "datetype",
+              "value": "pdat"
+            },
+            {
+              "name": "mindate",
+              "value": "={{ $now.minus({ years: 1 }).toFormat('yyyy/MM/dd') }}"
+            },
+            {
+              "name": "maxdate",
+              "value": "={{ $now.toFormat('yyyy/MM/dd') }}"
+            },
+            {
+              "name": "retmode",
+              "value": "json"
+            },
+            {
+              "name": "retmax",
+              "value": "50"
+            },
+            {
+              "name": "api_key",
+              "value": "9ffae49b7e30d12efeb1babc13a1cd166909"
+            },
+            {
+              "name": "sort",
+              "value": "relevance"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        432
+      ],
+      "id": "4e994ae3-7681-436a-8ad9-fb34eca97cce",
+      "name": "Recherche articles ANNÉE"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupérer les articles déjà envoyés depuis Google Sheets\nlet sentPmids = [];\n\ntry {\n  const sentArticlesData = $('Lire articles déjà envoyés').all();\n  \n  if (sentArticlesData && sentArticlesData.length > 0) {\n    // Essayer différentes variantes de noms de colonnes (PMID, pmid, Pmid)\n    sentPmids = sentArticlesData\n      .map(item => {\n        const pmid = item.json.PMID || item.json.pmid || item.json.Pmid;\n        return pmid ? String(pmid).trim() : null;\n      })\n      .filter(pmid => pmid);\n    \n    // Supprimer les doublons dans la liste des PMIDs déjà envoyés\n    sentPmids = [...new Set(sentPmids)];\n  }\n  \n  console.log('📋 Articles déjà envoyés:', sentPmids);\n  console.log('📋 Liste des PMIDs:', sentPmids.join(', '));\n} catch (error) {\n  console.log('⚠️ Feuille Google Sheets vide ou erreur de lecture - Premier lancement');\n  console.log('Erreur:', error.message);\n  sentPmids = [];\n}\n\n// Récupérer les articles d'HIER\nconst yesterdayData = $('Recherche articles HIER').first().json;\nconst yesterdayIds = (yesterdayData.esearchresult?.idlist || []).map(id => String(id).trim());\nconsole.log('🔥 Articles trouvés HIER:', yesterdayIds.length);\n\n// Récupérer les articles de l'ANNÉE\nconst yearData = $('Recherche articles ANNÉE').first().json;\nconst yearIds = (yearData.esearchresult?.idlist || []).map(id => String(id).trim());\nconsole.log('📚 Articles trouvés sur l\\'ANNÉE:', yearIds.length);\n\n// Filtrer les articles d'HIER non encore envoyés\nconst availableYesterdayIds = yesterdayIds.filter(id => !sentPmids.includes(id));\nconsole.log('✅ Articles d\\'HIER disponibles (non envoyés):', availableYesterdayIds.length);\nconsole.log('✅ PMIDs disponibles hier:', availableYesterdayIds.join(', '));\n\nlet selectedId = null;\nlet selectionSource = '';\n\n// PRIORITÉ 1: Si on a des articles d'hier disponibles, en choisir un\nif (availableYesterdayIds.length > 0) {\n  const randomIndex = Math.floor(Math.random() * availableYesterdayIds.length);\n  selectedId = availableYesterdayIds[randomIndex];\n  selectionSource = 'YESTERDAY_PRIORITY';\n  console.log('🎯 PRIORITÉ: Article d\\'HIER sélectionné (PMID):', selectedId);\n} else {\n  // PRIORITÉ 2: Sinon, choisir parmi les articles de l'année\n  console.log('⚠️ Aucun article d\\'hier disponible, sélection dans l\\'année...');\n  \n  const availableYearIds = yearIds.filter(id => !sentPmids.includes(id));\n  console.log('✅ Articles de l\\'ANNÉE disponibles:', availableYearIds.length);\n  \n  if (availableYearIds.length === 0) {\n    throw new Error('❌ Tous les articles ont déjà été envoyés ! Ajustez les critères de recherche.');\n  }\n  \n  const randomIndex = Math.floor(Math.random() * availableYearIds.length);\n  selectedId = availableYearIds[randomIndex];\n  selectionSource = 'YEAR_FALLBACK';\n  console.log('📌 Article de l\\'ANNÉE sélectionné (PMID):', selectedId);\n}\n\nconsole.log('🎯 PMID final sélectionné:', selectedId);\nconsole.log('🎯 Source de sélection:', selectionSource);\n\nreturn [\n  {\n    json: {\n      pubmed_id: selectedId,\n      selection_source: selectionSource,\n      yesterday_available: availableYesterdayIds.length,\n      year_total: yearIds.length,\n      already_sent: sentPmids.length\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        208
+      ],
+      "id": "1b5deb32-c044-4019-bc37-296ef9617980",
+      "name": "Sélection avec priorité HIER"
+    },
+    {
+      "parameters": {
+        "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "db",
+              "value": "pubmed"
+            },
+            {
+              "name": "id",
+              "value": "={{$json.pubmed_id}}"
+            },
+            {
+              "name": "rettype",
+              "value": "abstract"
+            },
+            {
+              "name": "retmode",
+              "value": "xml"
+            },
+            {
+              "name": "api_key",
+              "value": "9ffae49b7e30d12efeb1babc13a1cd166909"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        208
+      ],
+      "id": "8da9bae6-9cb6-4b47-ac19-9b47c9dcc0d8",
+      "name": "Récupérer détails article"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraire les informations de l'article depuis le XML\nconst xml = $input.item.json.data;\n\n// Fonction pour extraire du texte depuis le XML\nfunction extractText(xml, startTag, endTag) {\n  const start = xml.indexOf(startTag);\n  if (start === -1) return '';\n  const end = xml.indexOf(endTag, start);\n  if (end === -1) return '';\n  return xml.substring(start + startTag.length, end).trim();\n}\n\n// Fonction pour extraire tous les éléments d'un tag\nfunction extractAll(xml, tag) {\n  const regex = new RegExp(`<${tag}[^>]*>([^<]+)</${tag}>`, 'g');\n  const matches = [];\n  let match;\n  while ((match = regex.exec(xml)) !== null) {\n    matches.push(match[1]);\n  }\n  return matches;\n}\n\n// Extraction du PMID\nconst pmid = extractText(xml, '<PMID Version=\"1\">', '</PMID>');\n\n// Extraction du titre\nconst title = extractText(xml, '<ArticleTitle>', '</ArticleTitle>');\n\n// Extraction de l'abstract\nlet abstract = '';\nconst abstractTexts = extractAll(xml, 'AbstractText');\nif (abstractTexts.length > 0) {\n  abstract = abstractTexts.join('\\n\\n');\n}\n\n// Extraction des auteurs\nconst lastNames = extractAll(xml, 'LastName');\nconst forenames = extractAll(xml, 'ForeName');\nconst authors = [];\nfor (let i = 0; i < Math.min(lastNames.length, forenames.length); i++) {\n  authors.push(`${forenames[i]} ${lastNames[i]}`);\n}\nconst authorsString = authors.length > 0 ? authors.join(', ') : 'Auteurs non disponibles';\n\n// Extraction du journal\nconst journal = extractText(xml, '<Title>', '</Title>');\n\n// Extraction de l'année de publication\nconst year = extractText(xml, '<Year>', '</Year>');\n\n// Extraction du DOI\nconst doi = extractText(xml, '<ELocationID EIdType=\"doi\" ValidYN=\"Y\">', '</ELocationID>');\n\n// Construction de l'URL PubMed\nconst pubmedUrl = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;\n\n// Construire le lien DOI si disponible\nconst doiUrl = doi ? `https://doi.org/${doi}` : '';\n\nconsole.log('📄 Article parsé:');\nconsole.log('PMID:', pmid);\nconsole.log('Titre:', title);\nconsole.log('Journal:', journal);\nconsole.log('Année:', year);\nconsole.log('Auteurs:', authorsString);\nconsole.log('DOI:', doi);\n\nreturn {\n  json: {\n    pmid: pmid,\n    title: title,\n    abstract: abstract,\n    authors: authorsString,\n    journal: journal,\n    year: year,\n    doi: doi,\n    pubmed_url: pubmedUrl,\n    doi_url: doiUrl\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        208
+      ],
+      "id": "ef50368a-a8a6-40ca-b7dc-a469ebe28987",
+      "name": "Parser XML article"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupérer les données de l'article parsé\nconst article = $input.item.json;\n\n// Construction du contenu HTML de l'email\nconst emailHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <style>\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            max-width: 800px;\n            margin: 0 auto;\n            padding: 20px;\n            background-color: #f5f5f5;\n        }\n        .container {\n            background-color: white;\n            padding: 40px;\n            border-radius: 10px;\n            box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n        }\n        .header {\n            text-align: center;\n            padding-bottom: 30px;\n            border-bottom: 3px solid #2563eb;\n            margin-bottom: 30px;\n        }\n        .header h1 {\n            color: #2563eb;\n            font-size: 28px;\n            margin: 0;\n            font-weight: 600;\n        }\n        .greeting {\n            font-size: 18px;\n            color: #555;\n            margin-bottom: 20px;\n        }\n        .section {\n            margin-bottom: 30px;\n        }\n        .section-title {\n            color: #2563eb;\n            font-size: 20px;\n            font-weight: 600;\n            margin-bottom: 15px;\n            padding-bottom: 10px;\n            border-bottom: 2px solid #e5e7eb;\n        }\n        .article-title {\n            font-size: 22px;\n            font-weight: bold;\n            color: #1e40af;\n            margin-bottom: 15px;\n            line-height: 1.4;\n        }\n        .metadata {\n            background-color: #f8fafc;\n            padding: 15px;\n            border-radius: 8px;\n            margin-bottom: 20px;\n            font-size: 14px;\n        }\n        .metadata-item {\n            margin: 8px 0;\n        }\n        .metadata-label {\n            font-weight: 600;\n            color: #475569;\n        }\n        .abstract-content {\n            background-color: #fefce8;\n            padding: 20px;\n            border-radius: 8px;\n            border-left: 4px solid #eab308;\n            font-size: 15px;\n            line-height: 1.8;\n            color: #374151;\n            white-space: pre-wrap;\n        }\n        .button {\n            display: inline-block;\n            background-color: #2563eb;\n            color: white;\n            padding: 12px 30px;\n            text-decoration: none;\n            border-radius: 6px;\n            font-weight: 600;\n            margin: 10px 10px 10px 0;\n            transition: background-color 0.3s;\n        }\n        .button:hover {\n            background-color: #1e40af;\n        }\n        .button.secondary {\n            background-color: #10b981;\n        }\n        .button.secondary:hover {\n            background-color: #059669;\n        }\n        .footer {\n            margin-top: 40px;\n            padding-top: 20px;\n            border-top: 2px solid #e5e7eb;\n            text-align: center;\n            color: #6b7280;\n            font-size: 14px;\n        }\n        .highlight {\n            background-color: #fef3c7;\n            padding: 2px 6px;\n            border-radius: 3px;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>📚 Votre Article Scientifique du Jour</h1>\n        </div>\n        \n        <div class=\"greeting\">\n            Bonjour <span class=\"highlight\">{{PRENOM}}</span>,\n        </div>\n        \n        <p>Voici votre sélection quotidienne d'article scientifique sur la performance sportive :</p>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">📖 Titre de l'article</div>\n            <div class=\"article-title\">${article.title}</div>\n        </div>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">ℹ️ Informations</div>\n            <div class=\"metadata\">\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">✍️ Auteurs:</span> ${article.authors}\n                </div>\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">📰 Journal:</span> ${article.journal}\n                </div>\n                <div class=\"metadata-item\">\n                    <span class=\"metadata-label\">📅 Année:</span> ${article.year}\n               \n                </div>\n            </div>\n        </div>\n        \n        <div class=\"section\">\n            <div class=\"section-title\">📝 Résumé (Abstract)</div>\n            <div class=\"abstract-content\">${article.abstract || 'Résumé non disponible pour cet article.'}</div>\n        </div>\n        \n        <div class=\"section\" style=\"text-align: center; margin-top: 30px;\">\n            <a href=\"${article.pubmed_url}\" class=\"button\">📄 Lire l'article complet sur PubMed</a>\n            ${article.doi_url ? `<a href=\"${article.doi_url}\" class=\"button secondary\">🔗 Accéder via DOI</a>` : ''}\n        </div>\n        \n        <div class=\"footer\">\n            <p>📧 Newsletter scientifique • Performance & Entraînement</p>\n            <p style=\"margin-top: 10px;\"></p>\n        </div>\n    </div>\n</body>\n</html>\n`;\n// Création du sujet de l'email avec le titre de l'article\nconst emailSubject = `📚 Article du jour : ${article.title.substring(0, 60)}${article.title.length > 60 ? '...' : ''}`;\n\nconsole.log('✉️ Email formaté avec succès');\nconsole.log('Sujet:', emailSubject);\n\n\nreturn {\n  json: {\n    ...article,\n    email_html: emailHtml,\n    email_subject: emailSubject\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        208
+      ],
+      "id": "9713d11a-47ce-45e2-9497-d8bffe56ad32",
+      "name": "Formater email"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ne garder qu'un seul item pour éviter les doublons dans Google Sheets\nconst item = $input.first();\n\nreturn [\n  {\n    json: {\n      PMID: item.json.pmid,\n      Titre: item.json.title,\n      Auteurs: item.json.authors,\n      Journal: item.json.journal,\n      Date_envoi: new Date().toISOString().split('T')[0]\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        208
+      ],
+      "id": "f157134a-79ac-47c5-bb0f-fb6741b7c22f",
+      "name": "Dédupliquer pour Sheets"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8",
+          "mode": "list",
+          "cachedResultName": "Stockage article ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Articles envoyés",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LIbI9g8Wr2m83FYD9znY_skczXXGKsD9I_BcUpX2zd8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "PMID",
+              "displayName": "PMID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DATE",
+              "displayName": "DATE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1632,
+        208
+      ],
+      "id": "784b7604-0ead-45e7-8913-629669f15db6",
+      "name": "Enregistrer dans Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Of3aojWoAn4AcnS4",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        192
+      ],
+      "id": "3db771c9-1f75-4468-baba-81a000957599",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.destinataire_email }}",
+        "subject": "=📚 Article du jour ",
+        "message": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        208
+      ],
+      "id": "17d2c4f8-b348-4fb1-9134-225f05b3a73a",
+      "name": "Send a message",
+      "webhookId": "77afcce5-9b1f-4ea2-ac23-6a205cc85908",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LDwFOtZc6mExSCz4",
+          "name": "Gmail account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Liste des destinataires - MODIFIEZ CETTE LISTE AVEC VOS DESTINATAIRES\nconst destinataires = [\n  { prenom: 'Pierre', email: 'pierre.cordelier35@gmail.com' },\n  { prenom: 'Matthieu', email: 'matthieu.cordelier35@gmail.com'}\n  \n  // Ajoutez vos destinataires ici\n];\n\n// Récupérer les données de l'email formaté\nconst emailData = $input.first().json;\n\n// Créer un item pour chaque destinataire avec l'email personnalisé\nconst items = destinataires.map(dest => {\n  // Remplacer le placeholder {{PRENOM}} par le vrai prénom\n  const emailHtmlPersonnalise = emailData.email_html.split('{{PRENOM}}').join(dest.prenom);\n  \n  return {\n    json: {\n      email_html: emailHtmlPersonnalise,\n      email_subject: emailData.email_subject,\n      destinataire_email: dest.email,\n      destinataire_prenom: dest.prenom,\n      pmid: emailData.pmid,\n      title: emailData.title,\n      authors: emailData.authors,\n      journal: emailData.journal\n    }\n  };\n});\n\nconsole.log(`📧 ${items.length} emails personnalisés créés`);\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        208
+      ],
+      "id": "cec983f8-4016-4e6a-aa01-5e1bc14a2aa9",
+      "name": "Personnaliser par destinataire1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        208
+      ],
+      "id": "67e5cea4-a1c2-47fb-9154-07576dcfe79e",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lire articles déjà envoyés": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sélection avec priorité HIER": {
+      "main": [
+        [
+          {
+            "node": "Récupérer détails article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Récupérer détails article": {
+      "main": [
+        [
+          {
+            "node": "Parser XML article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser XML article": {
+      "main": [
+        [
+          {
+            "node": "Formater email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formater email": {
+      "main": [
+        [
+          {
+            "node": "Personnaliser par destinataire1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recherche articles HIER": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dédupliquer pour Sheets": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer dans Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recherche articles ANNÉE": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Sélection avec priorité HIER",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Personnaliser par destinataire1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Dédupliquer pour Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Recherche articles HIER",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lire articles déjà envoyés",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Recherche articles ANNÉE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8aed7004-84b0-4cbb-b840-56d56ce620b0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "74bbb56dc362a142465e929f41c613e8c69175224b069768c3eb2f1903a2c817"
+  },
+  "id": "zeO4OGe5YmWwTsRM",
+  "tags": []
+}
