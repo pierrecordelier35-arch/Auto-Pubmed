@@ -37,7 +37,7 @@
     },
     {
       "parameters": {
-        "url": "=https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
+        "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -47,7 +47,7 @@
             },
             {
               "name": "term",
-              "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+              "value": "={{$json.pubmed_term}}"
             },
             {
               "name": "datetype",
@@ -102,7 +102,7 @@
             },
             {
               "name": "term",
-              "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+              "value": "={{$json.pubmed_term}}"
             },
             {
               "name": "datetype",
@@ -368,6 +368,27 @@
       ],
       "id": "67e5cea4-a1c2-47fb-9154-07576dcfe79e",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "pubmed_term",
+          "value": "(\"Athletic performance\"[Title/Abstract] OR \"Sport performance\"[Title/Abstract]) AND (Exercise[Title/Abstract] OR \"Exercice\"[Title/Abstract] OR Training[Title/Abstract] OR Nutrition[Title/Abstract] OR Fatigue[Title/Abstract] OR Recovery[Title/Abstract] OR Strength[Title/Abstract] OR Endurance[Title/Abstract] OR \"Physical endurance\"[Title/Abstract] OR Motivation[Title/Abstract] OR \"Mental fatigue\"[Title/Abstract] OR \"Wearable electronic devices\"[Title/Abstract] OR \"Artificial Intelligence\"[Title/Abstract] OR \"Body composition\"[Title/Abstract] OR Diet[Title/Abstract] OR \"Dietary supplement\"[Title/Abstract] OR \"Water electrolyte balance\"[Title/Abstract] OR Carbohydrates[Title/Abstract] OR Proteins[Title/Abstract] OR Lipids[Title/Abstract] OR \"Stress psychological\"[Title/Abstract] OR \"Self-efficacy\"[Title/Abstract] OR \"Self‑efficacy\"[Title/Abstract] OR Sleep[Title/Abstract] OR \"Athletic injuries\"[Title/Abstract] OR Rehabilitation[Title/Abstract] OR \"Réhabilitation\"[Title/Abstract] OR Biomarkers[Title/Abstract] OR Genetics[Title/Abstract] OR Testosterone[Title/Abstract] OR Hormones[Title/Abstract] OR \"Oxidative stress\"[Title/Abstract] OR \"Motion analysis\"[Title/Abstract])"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        208
+      ],
+      "id": "a6b39435-1c4d-4e1f-8aaf-0fe0c24d9efa",
+      "name": "Définir requête PubMed"
     }
   ],
   "pinData": {},
@@ -497,19 +518,30 @@
       "main": [
         [
           {
-            "node": "Recherche articles HIER",
-            "type": "main",
-            "index": 0
+            "index": 0,
+            "node": "Définir requête PubMed",
+            "type": "main"
           },
           {
             "node": "Lire articles déjà envoyés",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Définir requête PubMed": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Recherche articles HIER",
+            "type": "main"
           },
           {
+            "index": 0,
             "node": "Recherche articles ANNÉE",
-            "type": "main",
-            "index": 0
+            "type": "main"
           }
         ]
       ]
